@@ -1,20 +1,19 @@
 apiVersion: plugin.halo.run/v1alpha1
 kind: Plugin
 metadata:
-  # The name defines how the plugin is invoked,A unique name
-  name: PluginStarter
+  name: cloudinary-envoy
 spec:
   enabled: true
-  requires: ">=2.5.0"
+  requires: ">=2.12.0"
   author:
-    name: Halo OSS Team
-    website: https://github.com/halo-dev
-  logo: https://halo.run/logo
-  # 'homepage' usually links to the GitHub repository of the plugin
-  homepage: https://github.com/halo-dev/plugin-starter
-  # 'displayName' explains what the plugin does in only a few words
-  displayName: "插件快速开始模板"
-  description: "这是一个插件快速开始模板"
+    name: guqing
+    website: https://github.com/guqing
+  logo: logo.svg
+  homepage: https://github.com/guqing/plugin-cloudinary
+  displayName: "Media Optimizer"
+  description: "使用 Cloudinary 提供的服务来优化媒体并提高网站的媒体资源加载速度和性能。"
+  settingName: cloudinary-envoy
+  configMapName: cloudinary-envoy-configmap
   license:
     - name: "GPL-3.0"
-      url: "https://github.com/halo-dev/plugin-starter/blob/main/LICENSE"
+      url: "https://github.com/guqing/plugin-cloudinary/blob/main/LICENSE"
