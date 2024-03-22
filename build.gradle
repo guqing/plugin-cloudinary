@@ -5,7 +5,7 @@ plugins {
     id "run.halo.plugin.devtools" version "0.0.7"
 }
 
-group 'run.halo.starter'
+group 'io.github.guqing'
 sourceCompatibility = JavaVersion.VERSION_17
 
 repositories {
@@ -16,8 +16,10 @@ repositories {
 }
 
 dependencies {
-    implementation platform('run.halo.tools.platform:plugin:2.11.0-SNAPSHOT')
+    implementation platform('run.halo.tools.platform:plugin:2.13.0-SNAPSHOT')
     compileOnly 'run.halo.app:api'
+
+    implementation('com.cloudinary:cloudinary-http44:1.38.0')
 
     testImplementation 'run.halo.app:api'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -31,19 +33,7 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = "UTF-8"
 }
 
-node {
-    nodeProjectDir = file("${project.projectDir}/ui")
-}
-
-task buildFrontend(type: PnpmTask) {
-    args = ['build']
-}
-
-build {
-    // build frontend before build
-    tasks.getByName('compileJava').dependsOn('buildFrontend')
-}
-
 halo {
-    version = '2.11'
+    version = '2.13'
+    debug = true
 }

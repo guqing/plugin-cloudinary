@@ -1,0 +1,21 @@
+apiVersion: v1alpha1
+kind: Setting
+metadata:
+  name: cloudinary-envoy
+spec:
+  forms:
+    - group: credential
+      label: 密钥设置
+      formSchema:
+        - $formkit: text
+          label: "Cloud Name"
+          name: cloudName
+          validation: required
+        - $formkit: text
+          label: "API Key"
+          name: apiKey
+          validation: required
+        - $formkit: password
+          label: "API Secret"
+          name: apiSecret
+          validation: required
