@@ -1,76 +1,18 @@
-# plugin-starter
+# plugin-cloudinary
 
-Halo 2.0 插件开发快速开始模板。
+使用 Cloudinary 提供的服务来优化 Halo 主题端的图片媒体资源以提高网站的图片资源加载速度和性能。
 
-## 开发环境
+## How does it work?
 
-插件开发的详细文档请查阅：<https://docs.halo.run/developer-guide/plugin/hello-world>
+1. 通过拦截主题端的 HTML 页面，解析其中的 `<img>` 元素得到图片资源的 URL。
+2. 通过 Cloudinary 提供的 API 生成不同尺寸且格式为 Webp 的图片资源 URL。
+3. 修改 HTML 页面中的 `<img>` 元素，增加 `srcset` 属性，以便浏览器根据不同的屏幕尺寸选择合适的图片资源加载。
 
-所需环境：
+通过以上步骤，可以有效地提高网站的图片资源加载速度和性能。
 
-1. Java 17
-2. Node 18
-3. pnpm 8
-4. Docker (可选)
+## Configuration
 
-克隆项目：
-
-```bash
-git clone git@github.com:halo-sigs/plugin-starter.git
-
-# 或者当你 fork 之后
-
-git clone git@github.com:{your_github_id}/plugin-starter.git
-```
-
-```bash
-cd path/to/plugin-starter
-```
-
-### 运行方式 1（推荐）
-
-> 此方式需要本地安装 Docker
-
-```bash
-# macOS / Linux
-./gradlew pnpmInstall
-
-# Windows
-./gradlew.bat pnpmInstall
-```
-
-```bash
-# macOS / Linux
-./gradlew haloServer
-
-# Windows
-./gradlew.bat haloServer
-```
-
-执行此命令后，会自动创建一个 Halo 的 Docker 容器并加载当前的插件，更多文档可查阅：<https://github.com/halo-sigs/halo-gradle-plugin>
-
-### 运行方式 2
-
-> 此方式需要使用源码运行 Halo
-
-编译插件：
-
-```bash
-# macOS / Linux
-./gradlew build
-
-# Windows
-./gradlew.bat build
-```
-
-修改 Halo 配置文件：
-
-```yaml
-halo:
-  plugin:
-    runtime-mode: development
-    fixedPluginPath:
-      - "/path/to/plugin-starter"
-```
-
-最后重启 Halo 项目即可。
+1. 在 [Cloudinary](https://console.cloudinary.com/) 注册账号。
+2. 在 Cloudinary 控制台的 Getting Started 页面中找到 Cloud name、API Key 和 API Secret 信息，可以点击 View Credentials 查看。
+3. 在 Halo 后台的插件管理中配置此插件的 Cloud name、API Key 和 API Secret 信息为对应的值。
+4. 保存配置并清理一下页面缓存就已经生效了。
