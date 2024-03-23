@@ -1,5 +1,6 @@
 package io.github.guqing.cloudinary;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -23,32 +24,49 @@ public class ImageTagParser {
         StringBuffer sb = new StringBuffer();
         AtomicInteger counter = new AtomicInteger();
 
-        // 第一步：替换 img 标签为占位符，并收集生成缩略图的 Mono
         while (matcher.find()) {
             String imgTag = matcher.group();
             String src = extractSrc(imgTag);
-            if (StringUtils.isBlank(src)) {
+            if (invalidSrc(src)) {
                 continue;
             }
+
             var thumbnailMono = srcSetValueGenerator.apply(src)
                 .map(srcSetValue -> imgTag.replaceAll("src=\"[^\"]*\"",
                     "src=\"" + src + "\" srcset=\"" + srcSetValue + "\""));
             thumbnailMonos.add(thumbnailMono);
-            matcher.appendReplacement(sb, "{" + counter.getAndIncrement() + "}");
+            matcher.appendReplacement(sb,
+                "{" + buildPlaceholder(counter.getAndIncrement()) + "}");
         }
         matcher.appendTail(sb);
 
-        // 第二步：异步生成所有缩略图链接
         return Flux.mergeSequential(thumbnailMonos)
             .collectList()
             .map(thumbnails -> {
-                // 第三步：用生成的缩略图链接替换占位符
                 String resultHtml = sb.toString();
                 for (int i = 0; i < thumbnails.size(); i++) {
-                    resultHtml = resultHtml.replace("{" + i + "}", thumbnails.get(i));
+                    resultHtml =
+                        resultHtml.replace("{" + buildPlaceholder(i) + "}", thumbnails.get(i));
                 }
                 return resultHtml;
             });
+    }
+
+    static boolean invalidSrc(String src) {
+        if (StringUtils.isBlank(src)) {
+            return true;
+        }
+        try {
+            // ignore return value
+            URI.create(src);
+            return false;
+        } catch (IllegalArgumentException e) {
+            return true;
+        }
+    }
+
+    private static String buildPlaceholder(int count) {
+        return "_cloudinary_envoy_" + count;
     }
 
     private static String extractSrc(String imgTag) {

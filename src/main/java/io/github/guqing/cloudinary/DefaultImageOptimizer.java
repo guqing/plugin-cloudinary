@@ -36,7 +36,10 @@ public class DefaultImageOptimizer implements ImageOptimizer {
                 }
                 return srcSet;
             })
-            .doOnError(e -> log.error("Failed to optimize image: [{}]", imageUrl, e));
+            .onErrorResume(e -> true, e -> {
+                log.error("Failed to optimize image: [{}]", imageUrl, e);
+                return Mono.empty();
+            });
     }
 
     String processLink(String uri) {
