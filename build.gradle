@@ -19,7 +19,9 @@ dependencies {
     implementation platform('run.halo.tools.platform:plugin:2.13.0-SNAPSHOT')
     compileOnly 'run.halo.app:api'
 
-    implementation('com.cloudinary:cloudinary-http44:1.38.0')
+    implementation('com.cloudinary:cloudinary-http44:1.38.0') {
+        exclude group: 'org.apache.commons', module: 'commons-lang3'
+    }
 
     testImplementation 'run.halo.app:api'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
