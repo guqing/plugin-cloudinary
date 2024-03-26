@@ -21,6 +21,7 @@ dependencies {
 
     implementation('com.cloudinary:cloudinary-http44:1.38.0') {
         exclude group: 'org.apache.commons', module: 'commons-lang3'
+        exclude group: 'commons-logging'
     }
 
     testImplementation 'run.halo.app:api'
