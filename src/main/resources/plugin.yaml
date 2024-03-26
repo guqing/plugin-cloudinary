@@ -3,7 +3,7 @@ kind: Plugin
 metadata:
   name: cloudinary-envoy
   annotations:
-    "store.halo.run/app-id": app-mhQIV"
+    store.halo.run/app-id: app-mhQIV
 spec:
   enabled: true
   requires: ">=2.12.0"
