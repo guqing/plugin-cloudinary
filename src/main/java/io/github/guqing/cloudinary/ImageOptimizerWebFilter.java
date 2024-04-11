@@ -7,7 +7,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.reactivestreams.Publisher;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -15,6 +14,7 @@ import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
 import org.springframework.lang.NonNull;
 import org.springframework.security.web.server.util.matcher.AndServerWebExchangeMatcher;
@@ -68,10 +68,18 @@ public class ImageOptimizerWebFilter implements AdditionalWebFilter {
             super(exchange.getResponse());
         }
 
+        boolean isHtmlResponse(ServerHttpResponse response) {
+            return response.getHeaders().getContentType() != null &&
+                response.getHeaders().getContentType().includes(MediaType.TEXT_HTML);
+        }
+
         @Override
         @NonNull
         public Mono<Void> writeWith(@NonNull Publisher<? extends DataBuffer> body) {
             var response = getDelegate();
+            if (!isHtmlResponse(response)) {
+                return super.writeWith(body);
+            }
             var bodyWrap = Flux.from(body)
                 .map(dataBuffer -> {
                     var byteBuffer = allocateDirect(dataBuffer.readableByteCount());
@@ -83,24 +91,29 @@ public class ImageOptimizerWebFilter implements AdditionalWebFilter {
                 .flatMap(byteBuffers -> {
                     var html = byteBuffersToString(byteBuffers);
                     return ImageTagParser.processImgTagWithSrcSet(html,
-                        src -> imageOptimizer.optimize(src)
-                            .map(ImageOptimizer.SrcSet::generateSrcSet)
-                    );
+                            src -> imageOptimizer.optimize(src)
+                                .map(ImageOptimizer.SrcSet::generateSrcSet)
+                        )
+                        .map(ImageOptimizerWebFilter.this::stringToByteBuffer);
                 })
-                .map(ImageOptimizerWebFilter.this::stringToByteBuffer)
                 .map(byteBuffer -> response.bufferFactory().wrap(byteBuffer));
             return super.writeWith(bodyWrap);
         }
     }
 
     private String byteBuffersToString(List<ByteBuffer> byteBuffers) {
-        return byteBuffers.stream()
-            .map(byteBuffer -> {
-                byte[] byteArray = new byte[byteBuffer.remaining()];
-                byteBuffer.get(byteArray);
-                return new String(byteArray, StandardCharsets.UTF_8);
-            })
-            .collect(Collectors.joining());
+        int total = byteBuffers.stream().mapToInt(ByteBuffer::remaining).sum();
+        ByteBuffer combined = ByteBuffer.allocate(total);
+
+        for (ByteBuffer buffer : byteBuffers) {
+            combined.put(buffer);
+        }
+
+        combined.flip();
+        byte[] byteArray = new byte[combined.remaining()];
+        combined.get(byteArray);
+
+        return new String(byteArray, StandardCharsets.UTF_8);
     }
 
     public ByteBuffer stringToByteBuffer(String str) {
@@ -110,6 +123,6 @@ public class ImageOptimizerWebFilter implements AdditionalWebFilter {
 
     @Override
     public int getOrder() {
-        return 100;
+        return LOWEST_PRECEDENCE - 100;
     }
 }
