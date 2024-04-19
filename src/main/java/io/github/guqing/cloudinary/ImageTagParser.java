@@ -12,31 +12,37 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public class ImageTagParser {
-    private static final Pattern SRC_PATTERN = Pattern.compile("src=\"([^\"]*)\"");
     private static final Pattern IMG_TAG_PATTERN =
-        Pattern.compile("<img\\s[^>]*src=(\"[^\"]*\"|[^\\s>]*)\\s*[^>]*>",
+        Pattern.compile("<img ([^>]*?)src=(\"([^\"]+)\"|'([^']+)')([^>]*?)>",
             Pattern.CASE_INSENSITIVE);
 
     public static Mono<String> processImgTagWithSrcSet(String html,
         Function<String, Mono<String>> srcSetValueGenerator) {
         Matcher matcher = IMG_TAG_PATTERN.matcher(html);
         List<Mono<String>> thumbnailMonos = new ArrayList<>();
-        StringBuffer sb = new StringBuffer();
+        var sb = new StringBuilder();
         AtomicInteger counter = new AtomicInteger();
 
         while (matcher.find()) {
-            String imgTag = matcher.group();
-            String src = extractSrc(imgTag);
-            if (invalidSrc(src)) {
+            String beforeSrc = matcher.group(1);
+            String src = matcher.group(3) != null ? matcher.group(3) : matcher.group(4);
+            String afterSrc = matcher.group(5);
+            if (invalidSrc(src) || afterSrc.contains("srcset=\"")) {
                 continue;
             }
 
+            var fallback =
+                Mono.just(String.format("<img %ssrc=\"%s\"%s>", beforeSrc, src, afterSrc));
             var thumbnailMono = srcSetValueGenerator.apply(src)
-                .map(srcSetValue -> imgTag.replaceAll("src=\"[^\"]*\"",
-                    "src=\"" + src + "\" srcset=\"" + srcSetValue + "\""));
+                .map(srcSetValue -> String.format("<img %ssrc=\"%s\" srcset=\"%s\"%s>",
+                    beforeSrc, src, srcSetValue, afterSrc))
+                // Handle srcset generation failure
+                .onErrorResume(e -> fallback)
+                .switchIfEmpty(fallback);
             thumbnailMonos.add(thumbnailMono);
+            // replacement can't include $
             matcher.appendReplacement(sb,
-                "{" + buildPlaceholder(counter.getAndIncrement()) + "}");
+                "#({" + buildPlaceholder(counter.getAndIncrement()) + "})");
         }
         matcher.appendTail(sb);
 
@@ -46,7 +52,7 @@ public class ImageTagParser {
                 String resultHtml = sb.toString();
                 for (int i = 0; i < thumbnails.size(); i++) {
                     resultHtml =
-                        resultHtml.replace("{" + buildPlaceholder(i) + "}", thumbnails.get(i));
+                        resultHtml.replace("#({" + buildPlaceholder(i) + "})", thumbnails.get(i));
                 }
                 return resultHtml;
             });
@@ -67,13 +73,5 @@ public class ImageTagParser {
 
     private static String buildPlaceholder(int count) {
         return "_cloudinary_envoy_" + count;
-    }
-
-    private static String extractSrc(String imgTag) {
-        Matcher srcMatcher = SRC_PATTERN.matcher(imgTag);
-        if (srcMatcher.find()) {
-            return srcMatcher.group(1);
-        }
-        return "";
     }
 }
