@@ -1,5 +1,8 @@
 # plugin-cloudinary
 
+>[!WARNING]
+> 目前已经在 Halo [#6454](https://github.com/halo-dev/halo/pull/6454) 中实现了缩略图功能，因此本插件不再维护。
+
 使用 Cloudinary 提供的服务来优化 Halo 主题端的图片媒体资源以提高网站的图片资源加载速度和性能。
 
 ## How does it work?
